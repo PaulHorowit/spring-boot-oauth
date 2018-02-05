@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- status=debug 可以查看log4j的装配过程 -->
+<Configuration monitorInterval="60" status="error">
+  <properties>
+    <Property name="root.log.level">warn</Property>
+    <Property name="run.log.level">warn</Property>
+    <Property name="run.log.additivity">true</Property>
+    <property name="app.name">oauth2</property>
+    <property name="log.dir">/home/wbda/logs</property>
+    <property name="log.pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level
+      [%class.%method:%line] - %msg%n
+    </property>
+    <property name="log.file.size">100 MB</property>
+    <property name="log.file.count">31</property>
+    <property name="log.filePattern.suffix">%d{yyyy-MM-dd}.%i.log.gz</property>
+    <!-- 基于时间的触发策略。该策略主要是完成周期性的log文件封存工作。有两个参数： interval，integer型，指定两次封存动作之间的时间间隔。单位:以日志的命名精度来确定单位， 比如yyyy-MM-dd-HH 单位为小时，yyyy-MM-dd-HH-mm 单位为分钟 modulate，boolean型，说明是否对封存时间进行调制。若modulate=true，
+      则封存时间将以0点为边界进行偏移计算。比如，modulate=true，interval=4hours， 那么假设上次封存日志的时间为03:00，则下次封存日志的时间为04:00， 之后的封存时间依次为08:00，12:00，16:00 -->
+    <property name="log.time.interval">1</property>
+  </properties>
+  <Appenders>
+    <!-- 定义控制台输出 -->
+    <Console follow="true" name="STDOUT" target="SYSTEM_OUT">
+      <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+      <PatternLayout pattern="${log.pattern}"/>
+    </Console>
+    <!-- sql输出日志 -->
+    <RollingFile fileName="${log.dir}/${app.name}-sql.log"
+      filePattern="${log.dir}/${app.name}-sql-${log.filePattern.suffix}" name="SqlRollingFile">
+      <PatternLayout pattern="${log.pattern}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy interval="${log.time.interval}" modulate="true"/>
+        <SizeBasedTriggeringPolicy size="${log.file.size}"/>
+      </Policies>
+      <DefaultRolloverStrategy fileIndex="max" max="${log.file.count}"/>
+    </RollingFile>
+
+    <!-- 程序员调试日志 -->
+    <RollingRandomAccessFile fileName="${log.dir}/${app.name}.log"
+      filePattern="${log.dir}/${app.name}-${log.filePattern.suffix}" ignoreExceptions="false"
+      immediateFlush="true" name="RootFileLog">
+      <PatternLayout pattern="${log.pattern}"/>
+      <Policies>
+        <OnStartupTriggeringPolicy/>
+        <TimeBasedTriggeringPolicy interval="${log.time.interval}" modulate="true"/>
+        <SizeBasedTriggeringPolicy size="${log.file.size}"/>
+      </Policies>
+      <DefaultRolloverStrategy fileIndex="max" max="${log.file.count}"/>
+    </RollingRandomAccessFile>
+  </Appenders>
+  <Loggers>
+    <!-- 定义除单个类外所有日志记录级别 -->
+    <Root includeLocation="true"
+      level="${root.log.level}"><!-- level: ALL <= TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF -->
+      <AppenderRef ref="STDOUT"/>
+      <AppenderRef ref="RootFileLog"/>
+    </Root>
+
+    <!-- SPRING FRAMEWORK -->
+    <logger level="warn" name="org.springframework">
+    </logger>
+  </Loggers>
+</Configuration>
